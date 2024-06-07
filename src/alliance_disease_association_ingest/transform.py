@@ -1,13 +1,24 @@
 import uuid
-
+import pandas as pd
 from biolink_model.datamodel.pydanticmodel_v2 import (
     GeneToDiseaseAssociation,
     GenotypeToDiseaseAssociation,
-    VariantToDiseaseAssociation, KnowledgeLevelEnum, AgentTypeEnum,
+    VariantToDiseaseAssociation,
+    KnowledgeLevelEnum,
+    AgentTypeEnum
 )
 from koza.cli_utils import get_koza_app
 
-#  TODO: look at row["source"] to update this map
+# Load the CSV file
+mapping_file = ".tsv" # MONDO-DOID mapping file
+mapping_df = pd.read_csv(mapping_file, delimiter='\t')
+
+# Create a mapping dictionary from DOID to MONDO
+doid_to_mondo_mapping = dict(zip(mapping_df['object_id'], mapping_df['subject_id']))
+
+# Continue with your existing code
+koza_app = get_koza_app("alliance_disease_association")
+
 source_map = {
     "FB": "infores:flybase",
     "MGI": "infores:mgi",
@@ -19,57 +30,63 @@ source_map = {
     "ZFIN": "infores:zfin",
 }
 
-koza_app = get_koza_app("alliance_disease_association")
+predicate_map = {
+    "is_implicated_in": "biolink:contributes_to",
+    "is_marker_for": "biolink:associated_with",
+    "is_model_of": "biolink:model_of"
+}
+
+# Set to keep track of unique associations
+seen_associations = set()
 
 while (row := koza_app.get_row()) is not None:
     subject_category = row["DBobjectType"]
     if subject_category == 'gene':
-        AssociationClass = GeneToDiseaseAssociation
-        predicate = "biolink:related_to"  # TODO: sort out accurate predicates for each kind of row
-    elif subject_category == 'allele':
+        continue  # Skip processing for 'gene'
+
+    #if subject_category == 'gene':
+    #    AssociationClass = GeneToDiseaseAssociation
+    if subject_category == 'allele':
         AssociationClass = VariantToDiseaseAssociation
-        predicate = "biolink:related_to"  # TODO: sort out accurate predicates for each kind of row
     elif subject_category == 'affected_genomic_model':
         AssociationClass = GenotypeToDiseaseAssociation
-        predicate = "biolink:model_of"
     else:
-        # skip this row if there's an association with another kind of entity that we don't yet support, consider logging?
+        koza_app.next_row()
         continue
 
-    ## from Alliance disease association UI:
-    # "Is Implicated in" means that some variant of the gene is shown to function in causing or modifying a disease (for human) or a disease model state.
-    # "Is a marker for" is used when there is evidence of an association but insufficient evidence to establish causality and does not necessarily imply that the existence of, or change in the biomarker is causal for the disease, but rather may result from it.
+    association_type = row["AssociationType"]
+    predicate = predicate_map.get(association_type)
 
-    ##  predicates map
-    # biomarker_via_orthology
-    # implicated_via_orthology
-    # is_implicated_in
-    # is_marker_for : biolink:biomarker_for
-    # is_model_of : biolink:model_of
-    # is_not_implicated_in
-
-    if row["AssociationType"] == "is_model_of":
-        predicate = "biolink:model_of"
-#    elif row["AssociationType"] == "is_marker_for":
- #       predicate = "biolink:biomarker_for"
-    else:
-        # skip this row if there's an association type that we don't yet support
+    if predicate is None:
+        koza_app.next_row()
         continue
+
+    unique_id = (row["DBObjectID"], predicate, row["DOID"], row["AssociationType"])
+
+    if unique_id in seen_associations:
+        koza_app.next_row()
+        continue
+
+    seen_associations.add(unique_id)
+
+    # Replace DOID with MONDO if available
+    object_id = doid_to_mondo_mapping.get(row["DOID"], row["DOID"])
+
+    print(subject_category, row["DBObjectID"], predicate, row["DOID"], object_id, row["AssociationType"])
 
     association = AssociationClass(
         id=str(uuid.uuid1()),
         subject=row["DBObjectID"],
-        predicate="",  #
-        object=row["DOID"],
+        predicate=predicate,
+        object=object_id,
         has_evidence=[row["EvidenceCode"]],
-        # TODO: capture row["ExperimentalCondition"], probably as qualifier?
-        publications=[row["Reference"]],
         primary_knowledge_source=source_map[row["DBObjectID"].split(':')[0]],
         aggregator_knowledge_source=["infores:monarchinitiative", "infores:agrkb"],
-        # TODO: set KnowledgeLevelEnum and AgentType enum, it looks like there are inferred edges and that can show up in the KL/AT
-        # TODO: the via_orthology association types would probably call for different KL/AT values?
         knowledge_level=KnowledgeLevelEnum.knowledge_assertion,
         agent_type=AgentTypeEnum.manual_agent
+        # TODO: capture row["ExperimentalCondition"], probably as qualifier?
+        # TODO: capture row["Reference"] as publications. Might bring in redundancy?
+        # TODO: set KnowledgeLevelEnum and AgentTypeEnum, it looks like there are inferred edges and that can show up in the KL/AT
     )
 
     koza_app.write(association)
