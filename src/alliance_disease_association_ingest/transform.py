@@ -10,8 +10,8 @@ from koza.cli_utils import get_koza_app
 import sys
 
 # Constants
-#mapping_file = "data/mondo_exactmatch_doid.sssom.tsv"
-mapping_file = "src/mappings/doid.sssom.tsv"
+mapping_file = "data/mondo_exactmatch_doid.sssom.tsv"
+#mapping_file = "src/mappings/doid.sssom.tsv"
 source_map = {
     "FB": "infores:flybase",
     "MGI": "infores:mgi",
@@ -29,7 +29,7 @@ predicate_map = {
 }
 
 # Load mapping data
-mapping_df = pd.read_csv(mapping_file, delimiter='\t', skiprows=34)
+mapping_df = pd.read_csv(mapping_file, delimiter='\t') #skiprows=34
 doid_to_mondo_mapping = dict(zip(mapping_df['object_id'], mapping_df['subject_id']))
 
 # Initialize Koza application
