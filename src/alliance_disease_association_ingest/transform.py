@@ -10,7 +10,7 @@ from koza.cli_utils import get_koza_app
 import sys
 
 # Constants
-mapping_file = "data/mondo_exactmatch_doid.sssom.tsv"
+mapping_file = "src/mappings/mondo_exactmatch_doid.sssom.tsv"
 #mapping_file = "src/mappings/doid.sssom.tsv"
 source_map = {
     "FB": "infores:flybase",
