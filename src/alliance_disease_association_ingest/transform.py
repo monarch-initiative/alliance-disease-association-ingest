@@ -11,7 +11,7 @@ import sys
 
 # Constants
 #mapping_file = "data/mondo_exactmatch_doid.sssom.tsv"
-mapping_file = "data/doid.sssom.tsv"
+mapping_file = "src/mappings/doid.sssom.tsv"
 source_map = {
     "FB": "infores:flybase",
     "MGI": "infores:mgi",
@@ -84,7 +84,7 @@ try:
             count = 0
             for unique_id, association_data in merged_associations.items():
                 count += 1
-                print(str(uuid.uuid1()), unique_id, list(set(association_data['has_evidence'])), list(set(association_data['publications'])), count)
+                #print(str(uuid.uuid1()), unique_id, list(set(association_data['has_evidence'])), list(set(association_data['publications'])), count)
                 association = GenotypeToDiseaseAssociation(
                     id=str(uuid.uuid1()),
                     subject=association_data['subject'],
