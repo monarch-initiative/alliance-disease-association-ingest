@@ -1,5 +1,5 @@
 category	subject_prefix	predicate	object_prefix	count_star()
-biolink:GenotypeToDiseaseAssociation	MGI	biolink:model_of	DOID	7973
-biolink:GenotypeToDiseaseAssociation	RGD	biolink:model_of	DOID	1003
-biolink:GenotypeToDiseaseAssociation	WB	biolink:model_of	DOID	780
-biolink:GenotypeToDiseaseAssociation	ZFIN	biolink:model_of	DOID	2295
+biolink:GenotypeToDiseaseAssociation	MGI	biolink:model_of	DOID	1
+biolink:GenotypeToDiseaseAssociation	MGI	biolink:model_of	MONDO	7579
+biolink:GenotypeToDiseaseAssociation	RGD	biolink:model_of	MONDO	647
+biolink:GenotypeToDiseaseAssociation	WB	biolink:model_of	MONDO	189
