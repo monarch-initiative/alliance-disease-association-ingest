@@ -10,8 +10,8 @@ from koza.cli_utils import get_koza_app
 import sys
 
 # Constants
-mapping_file = "src/mappings/mondo_exactmatch_doid.sssom.tsv"
-#mapping_file = "src/mappings/doid.sssom.tsv"
+#mapping_file = "src/mappings/mondo_exactmatch_doid.sssom.tsv"
+
 source_map = {
     "FB": "infores:flybase",
     "MGI": "infores:mgi",
@@ -29,8 +29,8 @@ predicate_map = {
 }
 
 # Load mapping data
-mapping_df = pd.read_csv(mapping_file, delimiter='\t') #skiprows=34
-doid_to_mondo_mapping = dict(zip(mapping_df['object_id'], mapping_df['subject_id']))
+#mapping_df = pd.read_csv(mapping_file, delimiter='\t') #skiprows=34
+#doid_to_mondo_mapping = dict(zip(mapping_df['object_id'], mapping_df['subject_id']))
 
 # Initialize Koza application
 koza_app = get_koza_app("alliance_disease")
@@ -63,8 +63,9 @@ try:
             if not predicate:
                 continue
 
-            object_id = doid_to_mondo_mapping.get(row.get("DOID"), row.get("DOID"))
-            unique_id = (row.get("DBObjectID"), predicate, row.get("DOID"), object_id)
+            #object_id = doid_to_mondo_mapping.get(row.get("DOID"), row.get("DOID"))
+            #unique_id = (row.get("DBObjectID"), predicate, row.get("DOID"), object_id)
+            unique_id = (row.get("DBObjectID"), predicate, row.get("DOID"))
 
             if unique_id in merged_associations:
                 merged_associations[unique_id]['has_evidence'].append(row.get("EvidenceCode"))
@@ -73,8 +74,9 @@ try:
                 merged_associations[unique_id] = {
                     'subject': row.get("DBObjectID"),
                     'predicate': predicate,
-                    'original_object': row.get("DOID"),
-                    'object': object_id,
+                    'object': row.get("DOID"),
+                    #'original_object': row.get("DOID"),
+                    #'object': object_id,
                     'has_evidence': [row.get("EvidenceCode")],
                     'publications': [row.get("Reference")],
                     'primary_knowledge_source': source_map.get(row.get("DBObjectID").split(':')[0], "unknown"),
@@ -90,7 +92,7 @@ try:
                     subject=association_data['subject'],
                     predicate=association_data['predicate'],
                     object=association_data['object'],
-                    original_object=association_data['original_object'],
+                    #original_object=association_data['original_object'],
                     has_evidence=list(set(association_data['has_evidence'])),
                     publications=list(set(association_data['publications'])),  # Ensure unique publications
                     primary_knowledge_source=association_data['primary_knowledge_source'],
