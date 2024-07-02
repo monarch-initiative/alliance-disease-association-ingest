@@ -36,7 +36,8 @@ edge_properties:
   - subject
   - predicate
   - object
-  - original_object
+ # - commented out while SSSOM mapping is turned off
+ #  - original_object
   - has_evidence
   - publications
   - primary_knowledge_source
