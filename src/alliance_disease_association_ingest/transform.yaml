@@ -8,6 +8,7 @@ delimiter: "\t"
 files:
   - "./data/DISEASE-ALLIANCE_COMBINED.tsv.gz"
 
+
 columns:
   - Taxon
   - SpeciesName
@@ -35,6 +36,10 @@ edge_properties:
   - subject
   - predicate
   - object
+ # - commented out while SSSOM mapping is turned off
+ #  - original_object
+  - has_evidence
+  - publications
   - primary_knowledge_source
   - aggregator_knowledge_source
   - knowledge_level
