@@ -1,0 +1,52 @@
+# Config file for transforming data from a source
+# See additional/optional config parameters at https://koza.monarchinitiative.org/Ingests/source_config/
+
+name: "alliance_disease"
+
+reader:
+  name: "alliance_disease_reader"
+  files:
+    - "../data/DISEASE-ALLIANCE_COMBINED.tsv.gz"
+  format: "csv"
+  delimiter: "\t"
+  columns:
+    - Taxon
+    - SpeciesName
+    - DBobjectType
+    - DBObjectID
+    - DBObjectSymbol
+    - AssociationType
+    - DOID
+    - DOtermName
+    - WithOrtholog
+    - InferredFromID
+    - InferredFromSymbol
+    - ExperimentalCondition
+    - Modifier
+    - EvidenceCode
+    - EvidenceCodeName
+    - Reference
+    - Date
+    - Source
+
+transform:
+  name: "alliance_disease_transform"
+  mode: "flat"
+
+writer:
+  name: "alliance_disease_writer"
+  node_properties: []
+  edge_properties:
+    - id
+    - category
+    - subject
+    - predicate
+    - object
+    - has_evidence
+    - publications
+    - primary_knowledge_source
+    - aggregator_knowledge_source
+    - knowledge_level
+    - agent_type
+
+min_edge_count: 12000
