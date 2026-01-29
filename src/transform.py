@@ -1,13 +1,13 @@
 import uuid
 
+import koza
 from biolink_model.datamodel.pydanticmodel_v2 import (
-    Association,
+    AgentTypeEnum,
     GeneToDiseaseAssociation,
     GenotypeToDiseaseAssociation,
-    VariantToDiseaseAssociation, KnowledgeLevelEnum, AgentTypeEnum,
+    KnowledgeLevelEnum,
+    VariantToDiseaseAssociation,
 )
-from typing import Dict
-from koza.cli_utils import get_koza_app
 
 #  TODO: look at row["source"] to update this map
 source_map = {
@@ -23,10 +23,10 @@ source_map = {
 
 ZF_STANDARD_CONDITIONS = "Has Condition: standard conditions"
 
-koza_app = get_koza_app("alliance_disease")
 
-entities = []  # : Dict[str, Association] = {}
-while (row := koza_app.get_row()) is not None:
+@koza.transform_record()
+def transform_record(koza_transform, row):
+    """Transform Alliance disease association records into Biolink model associations."""
     subject_category = row["DBobjectType"]
     if subject_category == 'gene':
         AssociationClass = GeneToDiseaseAssociation
@@ -38,12 +38,15 @@ while (row := koza_app.get_row()) is not None:
         AssociationClass = GenotypeToDiseaseAssociation
         predicate = "biolink:model_of"
     else:
-        # skip this row if there's an association with another kind of entity that we don't yet support, consider logging?
-        continue
+        # skip this row if there's an association with another kind of entity that we don't yet support
+        return []
 
-    ## from Alliance disease association UI:
-    # "Is Implicated in" means that some variant of the gene is shown to function in causing or modifying a disease (for human) or a disease model state.
-    # "Is a marker for" is used when there is evidence of an association but insufficient evidence to establish causality and does not necessarily imply that the existence of, or change in the biomarker is causal for the disease, but rather may result from it.
+    # from Alliance disease association UI:
+    # "Is Implicated in" means that some variant of the gene is shown to function in causing
+    # or modifying a disease (for human) or a disease model state.
+    # "Is a marker for" is used when there is evidence of an association but insufficient
+    # evidence to establish causality and does not necessarily imply that the existence of,
+    # or change in the biomarker is causal for the disease, but rather may result from it.
 
     ##  predicates map
     # biomarker_via_orthology
@@ -55,16 +58,16 @@ while (row := koza_app.get_row()) is not None:
 
     if row["AssociationType"] == "is_model_of":
         predicate = "biolink:model_of"
-#    elif row["AssociationType"] == "is_marker_for":
- #       predicate = "biolink:biomarker_for"
+    # elif row["AssociationType"] == "is_marker_for":
+    #     predicate = "biolink:biomarker_for"
     else:
         # skip this row if there's an association type that we don't yet support
-        continue
+        return []
 
     # Exclude any rows with experimental conditions (aside from standard conditions) or modifiers
     if ((row.get("ExperimentalCondition") and row.get("ExperimentalCondition") != ZF_STANDARD_CONDITIONS)
             or row.get("Modifier")):
-        continue
+        return []
 
     association = AssociationClass(
         id=str(uuid.uuid1()),
@@ -76,10 +79,11 @@ while (row := koza_app.get_row()) is not None:
         publications=[row["Reference"]],
         primary_knowledge_source=source_map[row["DBObjectID"].split(':')[0]],
         aggregator_knowledge_source=["infores:monarchinitiative", "infores:agrkb"],
-        # TODO: set KnowledgeLevelEnum and AgentType enum, it looks like there are inferred edges and that can show up in the KL/AT
-        # TODO: the via_orthology association types would probably call for different KL/AT values?
+        # TODO: set KnowledgeLevelEnum and AgentType enum, it looks like there are inferred
+        # edges and that can show up in the KL/AT
+        # TODO: the via_orthology association types would probably call for different values?
         knowledge_level=KnowledgeLevelEnum.knowledge_assertion,
         agent_type=AgentTypeEnum.manual_agent
     )
 
-    koza_app.write(association)
+    koza_transform.write(association)
